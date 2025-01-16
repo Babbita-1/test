@@ -11,7 +11,7 @@ class AppRoute {
 
   static final routes = {
     onboardScreenRoute: (context) => const OnboardScreen(),
-    loginScreenRoute: (context) => const LoginScreen(),
+    loginScreenRoute: (context) => Loginscreen(),
     // Add other routes here
   };
 }

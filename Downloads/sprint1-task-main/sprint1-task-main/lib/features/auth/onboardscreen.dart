@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
+import 'package:task/app/constants/hive_table_constant.dart';
+import 'package:task/app/constants/theme_constant.dart';
 import 'package:task/features/auth/registerscreen.dart';
+// Import token_shared_prefs.dart
 
 class OnboardScreen extends StatefulWidget {
   const OnboardScreen({super.key});
@@ -17,9 +21,27 @@ class _OnboardScreenState extends State<OnboardScreen> {
     super.dispose();
   }
 
+  Future<void> _completeOnboarding() async {
+    // Save the completion state in Hive
+    final box = Hive.box(HiveTableConstant.userSettingsBox);
+    await box.put(HiveTableConstant.hasCompletedOnboardingKey, true);
+
+    // Ensure the widget is still mounted before navigating
+    if (!mounted) return;
+
+    // Navigate to RegisterScreen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RegisterScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       body: Stack(
         children: [
           PageView(
@@ -54,13 +76,7 @@ class _OnboardScreenState extends State<OnboardScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (_pageController.page == 2) {
-                      // Navigate to RegisterScreen instead of DashboardScreen
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
+                      _completeOnboarding(); // Save state and navigate
                     } else {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 300),

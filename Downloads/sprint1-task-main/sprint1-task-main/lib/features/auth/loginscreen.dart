@@ -1,144 +1,82 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:task/bloc/login_bloc.dart'; // Ensure this is correct
-import 'package:task/cubit/login_cubit.dart';
+import 'package:task/app/constants/theme_constant.dart';
+import 'package:task/app/shared_prefs/token_shared_prefs.dart'; // Import token_shared_prefs.dart
 
-import '../home/dashboardscreen.dart';
+class Loginscreen extends StatelessWidget {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  Loginscreen({super.key});
+
+  // Example login function
+  Future<void> _login(BuildContext context) async {
+    String email = _emailController.text;
+    String password = _passwordController.text;
+
+    // Check if email and password are valid, and get a token (just a simple example)
+    if (email == 'test@example.com' && password == 'password123') {
+      String token =
+          'example_token'; // This token should come from your authentication API
+
+      // Save the token in SharedPreferences
+      await TokenSharedPrefs.saveToken(token);
+
+      // Check if the widget is still mounted before using context
+      if (!context.mounted) {
+        return; // Guard against using context after async gaps
+      }
+
+      // Navigate to home or another screen
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      // Handle invalid login
+      if (!context.mounted) {
+        return; // Guard against using context after async gaps
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Invalid credentials'),
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-
-    return BlocProvider(
-      create: (_) => LoginCubit(), // Use LoginCubit here instead of LoginBloc
-      child: Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.indigo, Colors.indigoAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Card(
-                elevation: 12,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 25, vertical: 35),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "Login",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.indigo,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 30),
-                      TextField(
-                        controller: emailController,
-                        decoration: InputDecoration(
-                          prefixIcon:
-                              const Icon(Icons.email, color: Colors.indigo),
-                          labelText: "Email Address",
-                          floatingLabelStyle:
-                              const TextStyle(color: Colors.indigo),
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.indigo),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          prefixIcon:
-                              const Icon(Icons.lock, color: Colors.indigo),
-                          labelText: "Password",
-                          floatingLabelStyle:
-                              const TextStyle(color: Colors.indigo),
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.indigo),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      BlocConsumer<LoginCubit, LoginState>(
-                        listener: (context, state) {
-                          if (state is LoginSuccess) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DashboardScreen(),
-                              ),
-                            );
-                          } else if (state is LoginError) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(state.message)),
-                            );
-                          }
-                        },
-                        builder: (context, state) {
-                          return ElevatedButton(
-                            onPressed: () {
-                              final email = emailController.text.trim();
-                              final password = passwordController.text.trim();
-
-                              context.read<LoginCubit>().login(
-                                  email, password); // Use `login` method here
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.indigo,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 15),
-                    ],
-                  ),
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        title: Text('Login'),
+        backgroundColor: AppTheme.primaryColor,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              TextField(
+                controller: _emailController,
+                decoration: AppTheme.formInputDecoration(
+                  prefixIcon: Icons.email,
+                  labelText: 'Email',
                 ),
               ),
-            ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                decoration: AppTheme.formInputDecoration(
+                  prefixIcon: Icons.lock,
+                  labelText: 'Password',
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => _login(context),
+                style: AppTheme.buttonStyle,
+                child: Text('Login'),
+              ),
+            ],
           ),
         ),
       ),

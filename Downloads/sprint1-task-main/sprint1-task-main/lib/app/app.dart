@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         theme: getApplicationTheme(),
         routes: {
           "/Onboarding": (context) => const OnboardScreen(),
-          "/login": (context) => const LoginScreen(),
+          "/login": (context) => Loginscreen(),
           "/register": (context) => const RegisterScreen(),
           "/dashboard": (context) => const DashboardScreen(),
         });

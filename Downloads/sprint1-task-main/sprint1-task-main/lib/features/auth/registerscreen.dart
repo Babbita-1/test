@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+// Import token_shared_prefs.dart
+import 'package:task/app/shared_prefs/token_shared_prefs.dart';
 import 'package:task/features/auth/loginscreen.dart';
 
 // Register Cubit States
@@ -24,15 +27,31 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(RegisterLoading());
 
     // Simulate registration logic (replace with actual backend call)
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 2), () async {
       if (fullName.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
-        // Assuming registration success
+        // Save user data in Hive
+        await saveUserData(fullName, email, password);
         emit(RegisterSuccess());
       } else {
         // Simulate failure
         emit(RegisterError("Registration failed. Please try again."));
       }
     });
+  }
+
+  // Function to save user data to Hive
+  Future<void> saveUserData(
+      String fullName, String email, String password) async {
+    final box = await Hive.openBox('userSettingsBox');
+
+    // Save user data
+    await box.put('userFullName', fullName);
+    await box.put('userEmail', email);
+    await box.put(
+        'userPassword', password); // Avoid storing plain text passwords
+
+    // Example of storing login state
+    await box.put('isLoggedIn', true);
   }
 }
 
@@ -62,6 +81,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  Future<void> register(BuildContext context) async {
+    String email = _emailController.text;
+    String password = _passwordController.text;
+
+    if (email.isNotEmpty && password.isNotEmpty) {
+      String token =
+          'new_example_token'; // Token should come from the registration API
+
+      // Save the token in SharedPreferences
+      await TokenSharedPrefs.saveToken(token);
+
+      // Check if the widget is still mounted before navigating
+      if (mounted) {
+        // Navigate to home screen
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please enter valid credentials'),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             if (state is RegisterSuccess) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                MaterialPageRoute(builder: (context) => Loginscreen()),
               );
             } else if (state is RegisterError) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -271,46 +313,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                           ),
                           const SizedBox(height: 30),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                // Trigger registration logic
-                                context.read<RegisterCubit>().register(
-                                      _fullNameController.text,
-                                      _emailController.text,
-                                      _passwordController.text,
-                                    );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.indigo,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 15),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "Register",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 15),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const LoginScreen()),
+                          BlocBuilder<RegisterCubit, RegisterState>(
+                            builder: (context, state) {
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.indigo,
+                                  minimumSize: const Size(double.infinity, 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    String fullName = _fullNameController.text;
+                                    String email = _emailController.text;
+                                    String password = _passwordController.text;
+
+                                    context
+                                        .read<RegisterCubit>()
+                                        .register(fullName, email, password);
+                                  }
+                                },
+                                child: state is RegisterLoading
+                                    ? const CircularProgressIndicator(
+                                        color: Colors.white)
+                                    : const Text("Register",
+                                        style: TextStyle(fontSize: 18)),
                               );
                             },
-                            child: const Text(
-                              "Have an account? Login",
-                              style: TextStyle(color: Colors.indigo),
-                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text("Already have an account? "),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => Loginscreen()),
+                                  );
+                                },
+                                child: const Text("Login"),
+                              ),
+                            ],
                           ),
                         ],
                       ),
